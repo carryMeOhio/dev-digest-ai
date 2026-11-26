@@ -8,7 +8,16 @@ import messages from "../../../../../../../../messages/en/runs.json"; // apps/we
 const TRACE: RunTrace = {
   config: { agent: "Security", version: "1", provider: "openai", model: "gpt-4.1", pr: 482, source: "local" },
   stats: { duration_ms: 8200, tokens_in: 12000, tokens_out: 1500, cost_usd: 0.012, findings: 2, grounding: "2/2 passed" },
-  prompt_assembly: { system: "You are a reviewer.", skills: "### skill", memory: null, specs: null, user: "Review PR #482" },
+  prompt_assembly: {
+    system: "You are a reviewer.",
+    skills: "### Skill: test-branch-coverage\nFlag one-sided branches.",
+    memory: null,
+    specs: null,
+    user: "Review PR #482",
+  },
+  skills_applied: [
+    { id: "sk1", name: "test-branch-coverage", type: "rubric", source: "manual", order: 0, tokens: 412 },
+  ],
   tool_calls: [{ tool: "review_file", args: "src/config.ts", meta: "single-pass", ms: 1200 }],
   raw_output: '{"verdict":"request_changes"}',
   memory_pulled: [{ pr: 471, text: "rate-limit public endpoints" }],
@@ -20,12 +29,13 @@ const TRACE: RunTrace = {
 };
 
 vi.mock("@/lib/hooks/trace", () => ({
-  useRunTrace: () => ({ data: TRACE, isLoading: false }),
+  useRunTrace: vi.fn(() => ({ data: TRACE, isLoading: false })),
 }));
 vi.mock("@/lib/hooks/reviews", () => ({
   useRunEvents: () => ({ events: [], running: false }),
 }));
 
+import { useRunTrace } from "@/lib/hooks/trace";
 import RunTraceDrawer from "./RunTraceDrawer";
 
 afterEach(cleanup);
@@ -51,6 +61,40 @@ describe("A5 Run Trace drawer (smoke)", () => {
     renderWithIntl(<RunTraceDrawer runId="r1" agentName="Security" prNumber={482} onClose={() => {}} />);
     expect(screen.getByText("COST")).toBeInTheDocument();
     expect(screen.getByText("$0.012")).toBeInTheDocument();
+  });
+
+  it("lists the skills applied to the run, in prompt order, with their token cost", () => {
+    renderWithIntl(<RunTraceDrawer runId="r1" agentName="Security" prNumber={482} onClose={() => {}} />);
+    // The Prompt assembly section is collapsed by default — open it.
+    fireEvent.click(screen.getByText("Prompt assembly"));
+
+    expect(screen.getByText("Skills applied")).toBeInTheDocument();
+    expect(screen.getByText("test-branch-coverage")).toBeInTheDocument();
+    expect(screen.getByText("1 skill · ~412 tokens added")).toBeInTheDocument();
+    // And the block itself is present, badged with what it added.
+    expect(screen.getByText("Skills (dynamic)")).toBeInTheDocument();
+  });
+
+  it("shows no skills block at all when the run had none attached", () => {
+    // This is the control-experiment invariant: a run with every skill disabled
+    // produces no skills section anywhere in the trace, not an empty one.
+    const noSkills: RunTrace = {
+      ...TRACE,
+      skills_applied: [],
+      prompt_assembly: { ...TRACE.prompt_assembly, skills: null },
+    };
+    // Only `data` and `isLoading` are read by the drawer; the rest of the
+    // TanStack result shape is irrelevant here.
+    vi.mocked(useRunTrace).mockReturnValueOnce({
+      data: noSkills,
+      isLoading: false,
+    } as unknown as ReturnType<typeof useRunTrace>);
+
+    renderWithIntl(<RunTraceDrawer runId="r1" agentName="Security" prNumber={482} onClose={() => {}} />);
+    fireEvent.click(screen.getByText("Prompt assembly"));
+
+    expect(screen.queryByText("Skills applied")).not.toBeInTheDocument();
+    expect(screen.queryByText("Skills (dynamic)")).not.toBeInTheDocument();
   });
 
   it("switches to the live log tab", () => {

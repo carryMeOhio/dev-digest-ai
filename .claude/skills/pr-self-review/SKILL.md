@@ -11,8 +11,9 @@ This skill is a **router**, not a reviewer in its own right. It owns no rules �
 
 ## When to use
 
-- Automatically before `gh pr create` or `git push <branch> origin` (wired via the `PreToolUse` hook in `.claude/settings.json`).
-- Manually whenever you want a pre-flight: user types `/pr-self-review`, or asks "self-review my diff", "check before I push", "pre-PR review".
+- Manually, which is the only way it runs: the user types `/pr-self-review`, or asks "self-review my diff", "check before I push", "pre-PR review".
+
+**Auto-invocation is off.** A `PreToolUse` hook on `gh pr create` / `git push origin` used to fire this skill on every push. It no longer does, and `.claude/settings.json` registers no hooks. The shim is kept at `run.sh` for anyone who wants to re-enable it deliberately (see below) — the default is that a review happens because someone asked for one, not as a side effect of pushing.
 - After rebasing or amending commits on a feature branch, when the diff vs `origin/main` has materially changed.
 
 ## When NOT to use
@@ -136,7 +137,20 @@ Keep the report scannable. One entry per finding. No recap paragraph at the end 
 
 ## Related files
 
-- `.claude/settings.json` — the `PreToolUse` hook that gates `gh pr create` and `git push <branch> origin`.
-- `.claude/skills/pr-self-review/run.sh` — the hook shim that detects the matching commands and invokes this skill headlessly via `claude -p`.
+- `.claude/settings.json` — registers **no hooks**. This skill is manual-only.
+- `.claude/skills/pr-self-review/run.sh` — the hook shim, kept but unwired. It detects `gh pr create` / `git push … origin` and invokes this skill headlessly via `claude -p`, exiting 2 on a CRITICAL. To gate pushes again, add it back:
+
+  ```json
+  {
+    "hooks": {
+      "PreToolUse": [
+        {
+          "matcher": "Bash",
+          "hooks": [{ "type": "command", "command": ".claude/skills/pr-self-review/run.sh" }]
+        }
+      ]
+    }
+  }
+  ```
 - `server/src/vendor/shared/contracts/findings.ts` — the source of truth for the severity enum.
 - `.claude/skills/security/SKILL.md` — canonical CRITICAL definition (Severity Classification section).

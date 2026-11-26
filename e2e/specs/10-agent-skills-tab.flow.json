@@ -1,0 +1,15 @@
+{
+  "name": "Agent editor exposes a Skills tab with the agent's attached skills",
+  "description": "Opens the seeded Test Quality Reviewer, switches to the Skills tab, and confirms its attached skills are listed in prompt order with the enabled count. Exercises the editor's ?tab=skills route, GET /skills and GET /agents/:id/skills. Read-only: no save is performed, so the seeded links are unchanged.",
+  "steps": [
+    { "cmd": ["open", "{BASE}/agents"], "label": "load the agents page" },
+    { "cmd": ["wait", "--load", "networkidle"], "label": "agents fetch settles" },
+    { "cmd": ["wait", "--text", "Test Quality Reviewer"], "label": "the seeded skills-era agent is visible" },
+    { "cmd": ["find", "text", "Test Quality Reviewer", "click"], "label": "open the agent editor" },
+    { "cmd": ["wait", "--url", "/agents/"], "label": "editor route reached" },
+    { "cmd": ["find", "role", "button", "click", "--name", "Skills"], "label": "switch to the Skills tab" },
+    { "cmd": ["wait", "--load", "networkidle"], "label": "skills + links fetch settles" },
+    { "cmd": ["wait", "--text", "test-branch-coverage"], "label": "an attached skill is listed" },
+    { "cmd": ["wait", "--text", "Order matters"], "label": "the prompt-order hint is shown" }
+  ]
+}

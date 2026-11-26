@@ -59,6 +59,13 @@
       "args": "args",
       "result": "result",
       "previewTruncated": "(preview truncated)"
+    },
+    "skills": {
+      "title": "Skills applied",
+      "none": "No skills were attached to this run.",
+      "tokens": "~{count} tokens",
+      "total": "{count, plural, one {# skill} other {# skills}} · ~{tokens} tokens added",
+      "estimate": "Token counts are estimates (cl100k_base), not the serving model’s tokenizer."
     }
   },
   "drawer": {
@@ -68,7 +75,7 @@
     "running": "running",
     "completed": "completed",
     "copyRawOutput": "Copy raw output",
-  "copied": "Copied!",
+    "copied": "Copied!",
     "tracePending": "Trace is written when the run completes — see the Live log tab.",
     "loadingTrace": "Loading trace…",
     "noTrace": "No trace available yet."

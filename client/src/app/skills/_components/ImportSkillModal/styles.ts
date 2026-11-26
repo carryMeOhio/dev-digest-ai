@@ -1,0 +1,91 @@
+import type { CSSProperties } from "react";
+
+/** Co-located styles for ImportSkillModal. */
+export const s = {
+  // The kit Modal pads neither its body nor its footer — see CreateSkillModal.
+  body: { padding: 24 } satisfies CSSProperties,
+  footer: { display: "flex", gap: 10, justifyContent: "flex-end" } satisfies CSSProperties,
+  dropZone: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 10,
+    padding: "32px 20px",
+    borderRadius: 9,
+    border: "1px dashed var(--border-strong)",
+    background: "var(--bg-surface)",
+    textAlign: "center",
+  } satisfies CSSProperties,
+  hint: {
+    fontSize: 12,
+    color: "var(--text-muted)",
+    lineHeight: 1.5,
+    maxWidth: 440,
+  } satisfies CSSProperties,
+  previewHead: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 10,
+  } satisfies CSSProperties,
+  previewName: { fontSize: 15, fontWeight: 700, flex: 1 } satisfies CSSProperties,
+  label: {
+    fontSize: 11,
+    fontWeight: 700,
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+    color: "var(--text-muted)",
+    marginBottom: 5,
+  } satisfies CSSProperties,
+  description: {
+    fontSize: 13,
+    color: "var(--text-secondary)",
+    lineHeight: 1.5,
+    marginBottom: 12,
+  } satisfies CSSProperties,
+  bodyBox: {
+    padding: "12px 14px",
+    borderRadius: 7,
+    border: "1px solid var(--border)",
+    background: "var(--bg-surface)",
+    maxHeight: 280,
+    overflow: "auto",
+  } satisfies CSSProperties,
+  notice: {
+    display: "flex",
+    gap: 10,
+    padding: "10px 12px",
+    borderRadius: 7,
+    border: "1px solid var(--warn)",
+    background: "var(--warn-bg)",
+    fontSize: 13,
+    lineHeight: 1.5,
+    marginBottom: 12,
+  } satisfies CSSProperties,
+  noticeTitle: { fontWeight: 700, color: "var(--text-primary)" } satisfies CSSProperties,
+  ignoredBox: {
+    padding: "10px 12px",
+    borderRadius: 7,
+    border: "1px solid var(--border)",
+    background: "var(--bg-elevated)",
+    marginTop: 12,
+  } satisfies CSSProperties,
+  ignoredItem: {
+    fontSize: 12,
+    color: "var(--text-muted)",
+    padding: "2px 0",
+  } satisfies CSSProperties,
+  warning: {
+    fontSize: 12,
+    color: "var(--text-secondary)",
+    lineHeight: 1.5,
+    marginTop: 8,
+  } satisfies CSSProperties,
+  error: {
+    fontSize: 13,
+    color: "var(--crit)",
+    marginTop: 10,
+    lineHeight: 1.5,
+  } satisfies CSSProperties,
+  mono: { fontSize: 12 } satisfies CSSProperties,
+} as const;

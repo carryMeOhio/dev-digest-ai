@@ -1,5 +1,11 @@
 import type { Container } from '../../platform/container.js';
-import type { Provider, Review, RunTrace, UnifiedDiff } from '@devdigest/shared';
+import type {
+  Provider,
+  Review,
+  RunTrace,
+  SkillApplied,
+  UnifiedDiff,
+} from '@devdigest/shared';
 import { reviewPullRequest, countBlockers } from '@devdigest/reviewer-core';
 import { RunLogger } from '../../platform/run-logger.js';
 import * as schema from '../../db/schema.js';
@@ -184,6 +190,12 @@ export class ReviewRunExecutor {
 
       const task = taskLine(pull) + rankNote;
 
+      // ---- Skills: the agent's linked, enabled rule blocks -------------------
+      const { blocks: skillBlocks, applied: skillsApplied } = await this.resolveSkills(
+        agent,
+        runLog,
+      );
+
       // ---- Engine: assemble → single-pass → grounding -----------------------
       // The pure review pipeline lives in @devdigest/reviewer-core (shared with
       // the CI runner). The service owns only I/O: repo-intel context resolution
@@ -196,6 +208,11 @@ export class ReviewRunExecutor {
         // Per-agent review strategy (configured in the Agent editor); falls back
         // to the studio default. single-pass = whole diff in one call.
         strategy: agent.strategy ?? REVIEW_STRATEGY,
+        // Linked skills, in the order set in the agent's Skills tab. Omitted
+        // entirely when none are active, so a skills-off run assembles a prompt
+        // byte-identical to the pre-skills one — that is what makes the
+        // with/without comparison a clean A/B.
+        ...(skillBlocks.length > 0 ? { skills: skillBlocks } : {}),
         // T1.3 — pass the callers digest only when we built one. assemblePrompt
         // omits the section when this is empty/undefined.
         ...(callersDigest ? { callers: callersDigest } : {}),
@@ -281,6 +298,7 @@ export class ReviewRunExecutor {
         raw_output: outcome.raw,
         memory_pulled: [],
         specs_read: [],
+        skills_applied: skillsApplied,
         // Persisted log = the run's FULL event buffer (incl. shared pre-work:
         // diff load + intent), not just events recorded inside this method.
         log: runLog.logFor(runId),
@@ -405,6 +423,64 @@ export class ReviewRunExecutor {
   }
 
   /**
+   * Resolve the rule blocks this agent contributes to the prompt.
+   *
+   * TWO gates, both of which must be open: `skills.enabled` (the skill is live
+   * at all, toggled on the Skills page) and `agent_skills.enabled` (this agent
+   * uses it, toggled in the agent's Skills tab). A skill that fails either one
+   * contributes nothing — no block, no tokens, no log line — which is what makes
+   * "enabled shows up in the trace, disabled doesn't" literally true rather than
+   * a styling difference.
+   *
+   * Each body is prefixed with its skill's name so the assembled `## Skills /
+   * rules` section reads as distinct blocks. The naming happens HERE rather than
+   * in reviewer-core because the engine is pure: it takes resolved strings and
+   * knows nothing about skill records.
+   *
+   * Token counts are estimates — cl100k_base via the tokenizer adapter, not the
+   * serving model's own tokenizer — and exist to answer "what did attaching this
+   * skill cost me?" in the trace.
+   */
+  private async resolveSkills(
+    agent: AgentRow,
+    runLog: RunLogger,
+  ): Promise<{ blocks: string[]; applied: SkillApplied[] }> {
+    let links;
+    try {
+      links = await this.container.agentsRepo.linkedSkills(agent.id);
+    } catch (err) {
+      // Never fail a review because the skill lookup broke; degrade to no skills
+      // (the same prompt as before this feature existed) and say so.
+      runLog.error(`skills: could not be loaded (${(err as Error).message}) — running without them`);
+      return { blocks: [], applied: [] };
+    }
+
+    const active = links.filter((l) => l.enabled && l.skill.enabled);
+    if (active.length === 0) {
+      runLog.info('skills: none attached');
+      return { blocks: [], applied: [] };
+    }
+
+    const blocks = active.map((l) => `### Skill: ${l.skill.name}\n${l.skill.body}`);
+    const applied: SkillApplied[] = active.map((l, i) => ({
+      id: l.skill.id,
+      name: l.skill.name,
+      type: l.skill.type,
+      source: l.skill.source,
+      order: i,
+      tokens: this.container.tokenizer.count(blocks[i]!),
+    }));
+
+    for (const sk of applied) {
+      runLog.info(`skill "${sk.name}" (${sk.type}) attached — ~${sk.tokens} token(s)`);
+    }
+    const total = applied.reduce((sum, sk) => sum + sk.tokens, 0);
+    runLog.info(`skills: ${applied.length} attached (~${total} token(s))`);
+
+    return { blocks, applied };
+  }
+
+  /**
    * A minimal RunTrace whose `log` is the run's full SSE buffer — persisted on
    * failure/cancel (and pre-work failures) so the events (and WHY it failed)
    * survive a reload, not just the in-memory stream.
@@ -431,6 +507,9 @@ export class ReviewRunExecutor {
       raw_output: '',
       memory_pulled: [],
       specs_read: [],
+      // A failed run may not have reached skill resolution; the empty list is
+      // honest here rather than a guess at what would have been attached.
+      skills_applied: [],
       log: this.container.runBus.buffer(runId).map((e) => ({ t: e.t, kind: e.kind, msg: e.msg })),
     };
   }

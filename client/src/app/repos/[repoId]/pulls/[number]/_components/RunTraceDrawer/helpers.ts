@@ -26,3 +26,14 @@ export function formatSeconds(ms: number): string {
 export function formatTokens(tokensIn: number, tokensOut: number): string {
   return `${(tokensIn / 1000).toFixed(0)}k→${(tokensOut / 1000).toFixed(1)}k`;
 }
+
+/**
+ * Total estimated tokens the attached skills added to the prompt.
+ *
+ * The per-skill numbers come from the server (counted at assembly time with
+ * cl100k_base), so this is a sum, not a re-count: the client has no tokenizer
+ * and should not pretend otherwise.
+ */
+export function totalSkillTokens(applied: { tokens: number }[]): number {
+  return applied.reduce((sum, sk) => sum + sk.tokens, 0);
+}

@@ -58,6 +58,26 @@ export const MemoryPulled = z.object({
 });
 export type MemoryPulled = z.infer<typeof MemoryPulled>;
 
+/**
+ * One skill that actually reached the prompt on this run, in prompt order.
+ *
+ * This is the per-slot token attribution the `PromptAssembly` doc-comment
+ * promises: `prompt_assembly.skills` is a single joined string, so without this
+ * the trace cannot say WHICH skills were applied or what each one cost. A skill
+ * that is disabled — globally or on the link — never appears here, which is
+ * exactly what makes "enabled shows a block, disabled shows nothing" verifiable.
+ */
+export const SkillApplied = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.string(),
+  source: z.string(),
+  order: z.number().int(),
+  /** Estimated: counted with cl100k_base, not the serving model's tokenizer. */
+  tokens: z.number().int(),
+});
+export type SkillApplied = z.infer<typeof SkillApplied>;
+
 export const RunStats = z.object({
   duration_ms: z.number().int(),
   tokens_in: z.number().int(),
@@ -84,6 +104,9 @@ export const RunTrace = z.object({
   raw_output: z.string(),
   memory_pulled: z.array(MemoryPulled),
   specs_read: z.array(z.string()),
+  /** Skills applied, in prompt order. `.default([])` keeps traces persisted
+      before the skills feature parseable — do not make this required. */
+  skills_applied: z.array(SkillApplied).default([]),
   log: z.array(RunLogLine),
 });
 export type RunTrace = z.infer<typeof RunTrace>;

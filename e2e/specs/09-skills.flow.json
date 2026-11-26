@@ -1,0 +1,16 @@
+{
+  "name": "Skills library renders the seeded skills and opens the tabbed editor",
+  "description": "Loads /skills, confirms a seeded skill card is rendered by SkillCard, then clicks it and confirms the /skills/:id editor opens on its Config tab with the description labelled as the skill's interface, and that the Versions tab lists its history. Exercises the skills grid, GET /skills, the list→detail route, and GET /skills/:id/versions. Read-only seeded data (no model call, nothing written).",
+  "steps": [
+    { "cmd": ["open", "{BASE}/skills"], "label": "load the skills page" },
+    { "cmd": ["wait", "--url", "/skills"], "label": "skills route reached" },
+    { "cmd": ["wait", "--load", "networkidle"], "label": "skills fetch settles" },
+    { "cmd": ["wait", "--text", "test-branch-coverage"], "label": "seeded skill card is visible" },
+    { "cmd": ["find", "text", "test-branch-coverage", "click"], "label": "open the skill" },
+    { "cmd": ["wait", "--url", "tab=config"], "label": "the detail route opens on Config" },
+    { "cmd": ["wait", "--text", "the skill’s interface"], "label": "Config shows the interface-labelled description" },
+    { "cmd": ["find", "role", "button", "click", "--name", "Versions"], "label": "switch to the Versions tab" },
+    { "cmd": ["wait", "--text", "Version history"], "label": "version history is listed" },
+    { "cmd": ["wait", "--text", "initial version"], "label": "the seeded v1 is shown" }
+  ]
+}

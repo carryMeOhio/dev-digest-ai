@@ -58,6 +58,11 @@ export const agentSkills = pgTable(
       .notNull()
       .references(() => skills.id, { onDelete: 'cascade' }),
     order: integer('order').notNull().default(0),
+    // Per-agent toggle, distinct from `skills.enabled` (the global one). A
+    // disabled link KEEPS its `order` row so re-enabling restores the skill's
+    // position in the prompt; unlinking is what removes it. A skill reaches the
+    // prompt only when BOTH gates are open.
+    enabled: boolean('enabled').notNull().default(true),
   },
   (t) => ({ pk: primaryKey({ columns: [t.agentId, t.skillId] }) }),
 );

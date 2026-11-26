@@ -35,6 +35,15 @@ export const agentKeys = {
     ["provider-models", provider] as const,
 };
 
+export const skillKeys = {
+  all: ["skills"] as const,
+  detail: (id: Id) => ["skill", id] as const,
+  versions: (id: Id) => ["skill-versions", id] as const,
+  stats: (id: Id) => ["skill-stats", id] as const,
+  /** The ordered skill links for one agent (agent editor, Skills tab). */
+  forAgent: (agentId: Id) => ["agent-skills", agentId] as const,
+};
+
 export const traceKeys = {
   run: (runId: Id) => ["run-trace", runId] as const,
 };

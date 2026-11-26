@@ -6,7 +6,12 @@ import {
   GENERAL_REVIEWER_PROMPT,
   SECURITY_REVIEWER_PROMPT,
   PERFORMANCE_REVIEWER_PROMPT,
+  TEST_QUALITY_REVIEWER_PROMPT,
+  API_CONTRACT_REVIEWER_PROMPT,
 } from './seed-prompts.js';
+import { SEED_SKILLS } from './seed-skills.js';
+import { FIXTURE_PRS } from './seed-fixtures.js';
+import { SkillsRepository } from '../modules/skills/repository.js';
 
 /** Default provider/model for the built-in reviewer agents. */
 const DEFAULT_PROVIDER = 'openrouter' as const;
@@ -21,8 +26,10 @@ const DEFAULT_MODEL = 'deepseek/deepseek-v4-flash';
  * with a few findings, and the three built-in agents (General + Security +
  * Performance), all on the default openrouter/deepseek-v4-flash provider+model.
  *
- * Later milestones populate the other tables (skills, conventions, memory, eval,
- * …) once their features are built — they start empty here.
+ * Also seeds the skills library (built-in rule blocks + their agent links) and
+ * the two control-experiment fixture PRs (#701 test quality, #702 API contract).
+ * The remaining tables (conventions, memory, eval, …) start empty until their
+ * features are built.
  */
 
 export const DEFAULT_WORKSPACE_NAME = 'default';
@@ -211,6 +218,33 @@ export async function seed(db: Db): Promise<{ workspaceId: string; userId: strin
       version: 1,
       createdBy: userId,
     },
+    // Skills-era agents. Their prompts carry only the role and the output
+    // conventions — the rules they review by are attached as skills below.
+    {
+      workspaceId,
+      name: 'Test Quality Reviewer',
+      description:
+        'Judges what the tests actually verify: uncovered branches, missed edge cases, excessive mocking.',
+      provider: DEFAULT_PROVIDER,
+      model: DEFAULT_MODEL,
+      systemPrompt: TEST_QUALITY_REVIEWER_PROMPT,
+      strategy: 'single-pass',
+      enabled: true,
+      version: 1,
+      createdBy: userId,
+    },
+    {
+      workspaceId,
+      name: 'API Contract Reviewer',
+      description: 'Catches route, schema and response changes that break an existing caller.',
+      provider: DEFAULT_PROVIDER,
+      model: DEFAULT_MODEL,
+      systemPrompt: API_CONTRACT_REVIEWER_PROMPT,
+      strategy: 'single-pass',
+      enabled: true,
+      version: 1,
+      createdBy: userId,
+    },
   ];
   for (const a of seedAgents) {
     const [existing] = await db
@@ -218,6 +252,87 @@ export async function seed(db: Db): Promise<{ workspaceId: string; userId: strin
       .from(t.agents)
       .where(and(eq(t.agents.workspaceId, workspaceId), eq(t.agents.name, a.name)));
     if (!existing) await db.insert(t.agents).values(a);
+  }
+
+  // ---- built-in skills + their agent links ----
+  // Routed through the repository (not a raw insert) so each skill gets its v1
+  // row in `skill_versions`, the same as one created through the editor.
+  const skillsRepo = new SkillsRepository(db);
+  for (const sk of SEED_SKILLS) {
+    let row = await skillsRepo.getByName(workspaceId, sk.name);
+    if (!row) {
+      row = await skillsRepo.insert({
+        workspaceId,
+        name: sk.name,
+        description: sk.description,
+        type: sk.type,
+        source: 'manual',
+        body: sk.body,
+        enabled: true,
+      });
+    }
+
+    for (const agentName of sk.agents) {
+      const [agent] = await db
+        .select()
+        .from(t.agents)
+        .where(and(eq(t.agents.workspaceId, workspaceId), eq(t.agents.name, agentName)));
+      if (!agent) continue;
+      // order = the skill's index within that agent's list, keeping the seeded
+      // order stable across re-runs.
+      const order = SEED_SKILLS.filter((s) => s.agents.includes(agentName)).findIndex(
+        (s) => s.name === sk.name,
+      );
+      await db
+        .insert(t.agentSkills)
+        .values({ agentId: agent.id, skillId: row.id, order, enabled: true })
+        .onConflictDoNothing();
+    }
+  }
+
+  // ---- control-experiment fixture PRs ----
+  for (const fx of FIXTURE_PRS) {
+    const [existing] = await db
+      .select()
+      .from(t.pullRequests)
+      .where(and(eq(t.pullRequests.repoId, repoId), eq(t.pullRequests.number, fx.number)));
+    if (existing) continue;
+
+    const [row] = await db
+      .insert(t.pullRequests)
+      .values({
+        workspaceId,
+        repoId,
+        number: fx.number,
+        title: fx.title,
+        author: fx.author,
+        branch: fx.branch,
+        base: 'main',
+        headSha: fx.headSha,
+        additions: fx.files.reduce((n, f) => n + f.additions, 0),
+        deletions: fx.files.reduce((n, f) => n + f.deletions, 0),
+        filesCount: fx.files.length,
+        status: 'needs_review',
+        body: fx.body,
+      })
+      .returning();
+
+    await db.insert(t.prFiles).values(
+      fx.files.map((file) => ({
+        prId: row!.id,
+        path: file.path,
+        additions: file.additions,
+        deletions: file.deletions,
+        patch: file.patch,
+      })),
+    );
+
+    await db.insert(t.prCommits).values({
+      prId: row!.id,
+      sha: fx.headSha,
+      message: fx.commitMessage,
+      author: fx.author,
+    });
   }
 
   return { workspaceId, userId };
