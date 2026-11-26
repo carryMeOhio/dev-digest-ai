@@ -9,17 +9,20 @@
     "menu": {
       "fromFile": "Import from file",
       "fromUrl": "Import from URL",
-      "community": "Search community skills…"
+      "community": "Search community skills…",
+      "create": "Create a skill",
+      "import": "Import from file"
     },
     "empty": {
       "title": "No skills yet",
-      "body": "Import a skill from a file, a URL, or the community catalog.",
-      "cta": "Import from file"
+      "body": "Create one here, or import a Markdown file or .zip archive.",
+      "cta": "Create a skill"
     },
     "selectPrompt": {
       "title": "Select a skill",
       "body": "Pick a skill on the left to preview its body."
-    }
+    },
+    "subtitle": "Reusable rule blocks. Attach them to an agent and they become part of its prompt."
   },
   "detail": {
     "crumbSkill": "Skill",
@@ -28,6 +31,13 @@
     "notFound": {
       "title": "Skill not found",
       "body": "It may have been deleted."
+    },
+    "listTitle": "Skills",
+    "tabs": {
+      "config": "Config",
+      "preview": "Preview",
+      "stats": "Stats",
+      "versions": "Versions"
     }
   },
   "drawer": {
@@ -45,7 +55,7 @@
     "nameHint": "Optional — derived from the first heading if blank.",
     "namePlaceholder": "pr-quality-rubric",
     "bodyLabel": "Skill body (Markdown)",
-    "bodyHint": "Pasted content is wrapped as untrusted data — never executed as instructions.",
+    "bodyHint": "The body is stored as text and becomes part of an agent’s prompt once you enable it.",
     "bodyPlaceholder": "# Rule\nDescribe the rule…",
     "importing": "Importing…",
     "import": "Import skill",
@@ -73,7 +83,7 @@
   },
   "listItem": {
     "needsVetting": "needs vetting",
-    "vettingTitle": "Untrusted source — vet before enabling",
+    "vettingTitle": "Came from outside — read the body before enabling it",
     "type": {
       "rubric": "rubric",
       "convention": "convention",
@@ -82,6 +92,7 @@
     },
     "source": {
       "manual": "Manual",
+      "imported_file": "Imported file",
       "extracted": "Extracted",
       "community": "Community",
       "imported_url": "Imported"
@@ -93,9 +104,121 @@
     "disabled": "Disabled",
     "save": "Save",
     "edit": "Edit",
-    "untrustedNotice": "This skill came from an untrusted source. Its body is stored as data (delimiter-wrapped) and must be vetted before it is enabled for an agent.",
+    "untrustedNotice": "This skill came from outside. Its body is added to an agent’s prompt as instructions the model will follow — read it before you enable it.",
     "bodyLabel": "Skill body (Markdown)",
     "bodyHint": "Saving a changed body creates a new immutable version.",
     "version": "v{version}"
+  },
+  "create": {
+    "title": "Create a skill",
+    "subtitle": "A skill is configuration text. It is appended to the prompt of every agent you attach it to.",
+    "name": "Name",
+    "namePlaceholder": "test-branch-coverage",
+    "description": "Description",
+    "descriptionLabel": "the skill’s interface",
+    "descriptionHint": "Phrase it as a directive — this is what tells an agent when the skill applies. \"Flag a test that covers only the happy path\", not \"about test coverage\".",
+    "descriptionPlaceholder": "Flag a test that exercises only one side of a branch.",
+    "type": "Type",
+    "body": "Body (Markdown)",
+    "bodyHint": "The block appended to the prompt, under a \"### Skill: <name>\" header.",
+    "bodyPlaceholder": "# Rule\n\nDescribe what to flag, and what not to flag.",
+    "cancel": "Cancel",
+    "submit": "Create skill",
+    "creating": "Creating…"
+  },
+  "import": {
+    "title": "Import a skill",
+    "subtitle": "Upload a Markdown file or a .zip archive. Nothing is saved until you confirm.",
+    "choose": "Choose a file",
+    "chooseHint": "Accepts .md or .zip. Only the markdown is read — scripts and binaries in an archive are listed, never run.",
+    "reading": "Reading…",
+    "parsing": "Parsing…",
+    "previewTitle": "Preview",
+    "sourceFile": "Read from",
+    "ignoredTitle": "Ignored — not imported, not executed",
+    "ignoredCount": "{count, plural, one {# other entry} other {# other entries}}",
+    "trustTitle": "This skill comes from outside",
+    "trustBody": "A skill body is added to an agent’s prompt as instructions it will follow. This one will be saved disabled — read it, then enable it yourself if you trust it.",
+    "back": "Choose another file",
+    "confirm": "Save as a disabled skill",
+    "saving": "Saving…",
+    "success": "Imported \"{name}\". It is disabled until you enable it.",
+    "failed": "Import failed"
+  },
+  "editor": {
+    "name": "Name",
+    "description": "Description",
+    "descriptionLabel": "the skill’s interface",
+    "descriptionHint": "Phrase it as a directive — this is what tells an agent when the skill applies.",
+    "type": "Type",
+    "body": "Body (Markdown)",
+    "bodyHint": "Any change to name, description, type or body is saved as a new version. Turning the skill on or off is not.",
+    "tabEdit": "Edit",
+    "tabPreview": "Preview",
+    "enabled": "Enabled",
+    "save": "Save skill",
+    "saving": "Saving…",
+    "saved": "Saved (v{version})",
+    "delete": "Delete",
+    "deleteConfirm": "Delete the skill \"{name}\"? It will be removed from every agent using it.",
+    "version": "v{version}",
+    "usedBy": "Attach it to an agent from that agent’s Skills tab."
+  },
+  "card": {
+    "agents": "{count, plural, =0 {No agents} one {# agent} other {# agents}}",
+    "pullFreq": "{value} pull freq",
+    "accept": "{value} accept",
+    "sourceVersion": "{source} · v{version}",
+    "delete": "Delete skill",
+    "statsTitle": "Last {days} days: share of review runs that used this skill, and how its findings were triaged."
+  },
+  "previewTab": {
+    "rendered": "Rendered",
+    "prompt": "As it appears in the prompt",
+    "promptHint": "Exactly the block appended under \"## Skills / rules\" for every agent this skill is attached to and enabled on.",
+    "tokens": "~{count} tokens"
+  },
+  "stats": {
+    "window": "Last {days} days",
+    "agents": "Agents",
+    "agentsHint": "Attached and enabled",
+    "runs": "Runs",
+    "runsHint": "Reviews that applied it",
+    "pullFreq": "Pull frequency",
+    "pullFreqHint": "Share of all review runs",
+    "accept": "Accept rate",
+    "acceptHint": "Accepted ÷ triaged findings",
+    "avgTokens": "Avg tokens",
+    "avgTokensHint": "Added per run",
+    "linkedTitle": "Attached to",
+    "linkedEmpty": "Not attached to any agent yet. Attach it from an agent’s Skills tab.",
+    "linkOn": "enabled",
+    "linkOff": "attached, off",
+    "position": "position {n}",
+    "findingsTitle": "Findings from runs that used it",
+    "findingsLine": "{total} total · {accepted} accepted · {dismissed} dismissed",
+    "noData": "No review has used this skill in the last {days} days, so there is nothing to measure yet.",
+    "loadError": "Could not load stats."
+  },
+  "versions": {
+    "title": "Version history",
+    "subtitle": "Every content edit — name, description, type or body — is saved as a new version. Restoring an old one adds it back as the newest version, so nothing is ever lost.",
+    "current": "current",
+    "restoredFrom": "restored from v{version}",
+    "initial": "initial version",
+    "changed": "changed: {fields}",
+    "field": {
+      "name": "name",
+      "description": "description",
+      "type": "type",
+      "body": "body"
+    },
+    "view": "View",
+    "hide": "Hide",
+    "restore": "Restore this version",
+    "restoring": "Restoring…",
+    "restoreConfirm": "Restore v{version}? Its content becomes a new version v{next}; nothing is deleted.",
+    "restored": "Restored v{version} as v{next}",
+    "loadError": "Could not load versions."
   }
 }

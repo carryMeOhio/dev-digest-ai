@@ -62,7 +62,7 @@
     "modelEmptyHint": "No models loaded — set the {provider} API key in Settings → API Keys.",
     "modelSearch": "Search models…",
     "systemPrompt": "System prompt",
-    "systemPromptHint": "Loaded as the static system message. Enabled skills are appended below it.",
+    "systemPromptHint": "Loaded as the static system message. Attached skills are sent separately, in the Skills tab’s order.",
     "outputSchema": "Output schema",
     "outputSchemaOption": "Standard findings JSON",
     "strategy": "Review strategy",
@@ -91,7 +91,21 @@
     "title": "Skills",
     "enabledCount": "{linked} of {total} enabled",
     "filterPlaceholder": "Filter skills…",
-    "orderHint": "Order matters — earlier skills appear earlier in the assembled prompt. Toggle to attach."
+    "orderHint": "Order matters — earlier skills appear earlier in the assembled prompt. Drag, or use the arrows, to reorder.",
+    "empty": "No skills yet. Create one on the Skills page, then attach it here.",
+    "emptyCta": "Go to Skills",
+    "loadError": "Could not load skills.",
+    "save": "Save skills",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "unsaved": "Unsaved changes",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "attached": "Attached",
+    "available": "Available",
+    "globallyDisabled": "disabled on the Skills page",
+    "globallyDisabledTitle": "This skill is turned off globally, so it will not reach the prompt even when checked here.",
+    "needsVetting": "needs vetting"
   },
   "mount": {
     "body": "Mount point for {owner}. The Agent Editor shell + tab routing are wired by A2 — {owner} renders this tab."

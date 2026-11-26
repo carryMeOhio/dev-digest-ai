@@ -4,6 +4,7 @@ import type {
   RunLogLine,
   RunStats,
   RunTrace,
+  SkillApplied,
   ToolCall,
 } from '@devdigest/shared';
 import { RunTrace as RunTraceSchema } from '@devdigest/shared';
@@ -31,6 +32,8 @@ export interface BuildTraceInput {
   rawOutput: string;
   memoryPulled: MemoryPulled[];
   specsRead: string[];
+  /** Skills that reached the prompt, in prompt order. Omit when none did. */
+  skillsApplied?: SkillApplied[];
   log: RunLogLine[];
 }
 
@@ -50,6 +53,7 @@ export function buildRunTrace(input: BuildTraceInput): RunTrace {
     raw_output: input.rawOutput,
     memory_pulled: input.memoryPulled,
     specs_read: input.specsRead,
+    skills_applied: input.skillsApplied ?? [],
     log: input.log,
   };
   // Validate so a malformed trace fails loudly at write-time, not read-time.

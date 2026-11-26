@@ -9,6 +9,8 @@ in the DB). The canonical, reviewable copies live next to this file:
 - [`general-reviewer.md`](./general-reviewer.md)
 - [`security-reviewer.md`](./security-reviewer.md)
 - [`performance-reviewer.md`](./performance-reviewer.md)
+- [`test-quality-reviewer.md`](./test-quality-reviewer.md)
+- [`api-contract-reviewer.md`](./api-contract-reviewer.md)
 
 > The DB is the source of truth at run time. These files are the human-readable
 > originals — when you change a prompt, edit the file here **and** push it to the
@@ -38,7 +40,7 @@ delimiter-wrapped (`prompt.ts:104-122`):
 ```
 <task line, e.g. "Review PR #7 '…'">
 ## PR description        (untrusted, author-controlled, truncated to 4000 chars)
-## Skills / rules        (linked skill bodies)
+## Skills / rules        (linked skill bodies, in the agent's configured order)
 ## Relevant memory       (curated memory items)
 ## Repo skeleton         (untrusted, repo-derived)
 ## Project context       (untrusted spec chunks)
@@ -49,6 +51,36 @@ delimiter-wrapped (`prompt.ts:104-122`):
 Sections with no content are omitted. Everything repo- or author-derived is wrapped
 in `<untrusted source="…">…</untrusted>` so the model can tell instructions
 (system) from data (user).
+
+**Skill bodies are NOT delimiter-wrapped**, and must not be. The injection guard
+tells the model that anything inside `<untrusted>` is data to analyse and never
+an instruction to follow — so wrapping a skill would make every skill inert. A
+skill is an instruction the user vetted and switched on, and the safety boundary
+is that toggle: an imported skill is stored disabled and only a person can enable
+it. Each body is prefixed with a `### Skill: <name>` header by the run executor,
+so distinct skills stay distinguishable inside the one section.
+
+## Prompt vs. skills — what belongs where
+
+The two newest agents (`test-quality-reviewer`, `api-contract-reviewer`) split
+their instructions in two, and new agents should follow them:
+
+| Lives in the **prompt** | Lives in a **skill** |
+|---|---|
+| The role and the subject of the review | The specific things to flag |
+| The method ("trace it from the caller in") | The checklists and enumerations |
+| The quality bar | What is explicitly *not* a finding |
+| Severity rubric, verdict mapping, findings discipline | — |
+
+The reason is not tidiness. A rule in a skill is reusable across agents,
+editable by a user without touching code, reorderable, and — because
+`assemblePrompt` omits the whole `## Skills / rules` section when nothing is
+attached — switchable off to measure what it is actually worth. A rule baked
+into the prompt is none of those things.
+
+The practical test: if you would want a *second* agent to apply this rule, or
+you would want to turn it off to see whether it changes the findings, it is a
+skill.
 
 ## The output schema is NOT in the prompt
 

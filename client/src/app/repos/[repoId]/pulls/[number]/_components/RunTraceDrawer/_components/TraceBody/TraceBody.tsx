@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { Badge } from "@devdigest/ui";
 import type { RunTrace, FindingRecord } from "@devdigest/shared";
 import { PROMPT_COLORS } from "../../constants";
-import { formatSeconds, formatTokens } from "../../helpers";
+import { formatSeconds, formatTokens, totalSkillTokens } from "../../helpers";
 import { formatCost } from "@/lib/format";
 import { s } from "../../styles";
 import { TraceSection } from "../TraceSection";
@@ -19,6 +19,9 @@ import { Row, Stat } from "../atoms";
 export function TraceBody({ trace, findings }: { trace: RunTrace; findings: FindingRecord[] }) {
   const t = useTranslations("runs");
   const stats = trace.stats;
+  // Older traces predate the skills feature and have no `skills_applied`.
+  const skillsApplied = trace.skills_applied ?? [];
+  const skillTokens = totalSkillTokens(skillsApplied);
   return (
     <>
       <TraceSection icon="Settings" title={t("trace.configuration")}>
@@ -73,8 +76,44 @@ export function TraceBody({ trace, findings }: { trace: RunTrace; findings: Find
 
       <TraceSection icon="FileText" title={t("trace.promptAssembly")} defaultOpen={false}>
         <PromptBlock label={t("trace.prompt.system")} text={trace.prompt_assembly.system} color={PROMPT_COLORS.system} />
+        {/* Which skills were attached, in prompt order, and what each cost.
+            `prompt_assembly.skills` is one joined string, so without this strip
+            the trace could not say which skill contributed what. A skill that is
+            disabled — globally or on this agent — appears nowhere here, and the
+            block below it is absent entirely. */}
+        {skillsApplied.length > 0 && (
+          <div style={s.skillsStrip}>
+            <div style={s.skillsHead}>
+              <span>{t("trace.skills.title")}</span>
+              <span style={{ marginLeft: "auto", textTransform: "none", letterSpacing: 0 }}>
+                {t("trace.skills.total", {
+                  count: skillsApplied.length,
+                  tokens: skillTokens,
+                })}
+              </span>
+            </div>
+            {skillsApplied.map((sk) => (
+              <div key={sk.id} style={s.skillRow}>
+                <span className="tnum" style={s.skillOrder}>
+                  {sk.order + 1}.
+                </span>
+                <span style={s.skillName}>{sk.name}</span>
+                <Badge color="var(--text-muted)">{sk.type}</Badge>
+                <span className="tnum" style={s.skillTokens}>
+                  {t("trace.skills.tokens", { count: sk.tokens })}
+                </span>
+              </div>
+            ))}
+            <div style={s.skillsNote}>{t("trace.skills.estimate")}</div>
+          </div>
+        )}
         {trace.prompt_assembly.skills != null && (
-          <PromptBlock label={t("trace.prompt.skills")} text={trace.prompt_assembly.skills} color={PROMPT_COLORS.skills} />
+          <PromptBlock
+            label={t("trace.prompt.skills")}
+            text={trace.prompt_assembly.skills}
+            color={PROMPT_COLORS.skills}
+            badge={skillTokens > 0 ? t("trace.skills.tokens", { count: skillTokens }) : undefined}
+          />
         )}
         {trace.prompt_assembly.memory != null && (
           <PromptBlock label={t("trace.prompt.memory")} text={trace.prompt_assembly.memory} color={PROMPT_COLORS.memory} />

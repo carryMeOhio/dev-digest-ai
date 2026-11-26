@@ -1,0 +1,52 @@
+import type { CSSProperties } from "react";
+
+/** Co-located styles for the skill Versions tab. */
+export const s = {
+  wrap: { display: "flex", flexDirection: "column", gap: 14, maxWidth: 980 } satisfies CSSProperties,
+  title: { fontSize: 17, fontWeight: 700 } satisfies CSSProperties,
+  subtitle: { fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 } satisfies CSSProperties,
+  list: { display: "flex", flexDirection: "column", gap: 8 } satisfies CSSProperties,
+  row: (current: boolean): CSSProperties => ({
+    borderRadius: 9,
+    border: `1px solid ${current ? "var(--accent)" : "var(--border)"}`,
+    background: "var(--bg-surface)",
+    overflow: "hidden",
+  }),
+  rowHead: { display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", flexWrap: "wrap" } satisfies CSSProperties,
+  version: { fontSize: 14, fontWeight: 700, minWidth: 34 } satisfies CSSProperties,
+  name: { fontSize: 13, fontWeight: 600, color: "var(--text-primary)" } satisfies CSSProperties,
+  changed: { fontSize: 12, color: "var(--text-muted)" } satisfies CSSProperties,
+  date: { fontSize: 12, color: "var(--text-muted)", marginLeft: "auto" } satisfies CSSProperties,
+  actions: { display: "flex", gap: 8 } satisfies CSSProperties,
+  detail: {
+    borderTop: "1px solid var(--border)",
+    padding: "12px 14px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+    background: "var(--bg-elevated)",
+  } satisfies CSSProperties,
+  detailLine: { fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 } satisfies CSSProperties,
+  detailKey: {
+    fontSize: 11,
+    fontWeight: 700,
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+    color: "var(--text-muted)",
+    marginRight: 8,
+  } satisfies CSSProperties,
+  pre: {
+    margin: 0,
+    padding: "10px 12px",
+    borderRadius: 7,
+    border: "1px solid var(--border)",
+    background: "var(--bg-primary)",
+    fontSize: 12.5,
+    lineHeight: 1.55,
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+    color: "var(--text-secondary)",
+    maxHeight: 360,
+    overflow: "auto",
+  } satisfies CSSProperties,
+} as const;

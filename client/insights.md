@@ -38,6 +38,18 @@ Adding or removing a column in the PR list requires editing two things in the sa
 
 The PR list's score + FINDINGS counts are derived server-side from reviews and non-dismissed findings. Dismissing a finding or deleting a run/review must invalidate the `["pulls"]` prefix, not just `["reviews", prId]`, or the list shows stale counts until an unrelated refetch.
 
+### Kit Checkbox is a button with role="checkbox"; FormField labels aren't associated
+**Date:** 2026-11-26
+**Evidence:** `client/src/vendor/ui/kit/Checkbox.tsx:26`
+
+`Checkbox` renders `<button role="checkbox">`, so `querySelector('input[type=checkbox]')` finds nothing. Pass the row's name via `label` to give it an accessible name, then query `getByRole("checkbox", { name })`. `FormField` renders its label as a plain div with no `htmlFor`, so inputs inside it have no accessible name — query the element directly.
+
+### Kit Modal leaves body padding and footer layout to the caller
+**Date:** 2026-11-27
+**Evidence:** `client/src/vendor/ui/kit/Modal.tsx:60`
+
+The body wrapper is `{ flex: 1, overflow: "auto" }` with no padding, so form fields sit flush against the modal border. The footer is padded but not a flex container, so two buttons render touching. Every modal must wrap its children in `{ padding: 24 }` and its footer buttons in `{ display: "flex", gap: 10, justifyContent: "flex-end" }` — copy `CreateAgentModal/styles.ts` rather than assuming the kit does it.
+
 ## Tool & Library Notes
 
 ### Number.toPrecision(n) switches to scientific notation below ~1e-6
@@ -45,6 +57,12 @@ The PR list's score + FINDINGS counts are derived server-side from reviews and n
 **Evidence:** `client/src/app/repos/[repoId]/pulls/[number]/_components/RunTraceDrawer/helpers.ts`
 
 `(1.23e-7).toPrecision(3)` returns `"1.23e-7"`, which is unfit for a user-facing badge. Guard numeric formatters by testing `/e/i` on the output and falling back to `toFixed(n).replace(/0+$/, "")` for the ultra-tiny branch. `parseFloat(toPrecision(3)).toString()` is also useful to strip trailing zeros (`"0.0120" → "0.012"`).
+
+### jsdom has no Blob.prototype.arrayBuffer
+**Date:** 2026-11-26
+**Evidence:** `client/src/test/setup.ts:11`
+
+jsdom 25 implements Blob/File but not `arrayBuffer()`, so any file-upload flow reading an uploaded file silently never calls its handler under test. Polyfilled via FileReader in the shared setup. Also note `getByDisplayValue` normalizes whitespace and so cannot match a multi-line textarea — assert on `element.value`.
 
 ## Recurring Errors & Fixes
 
@@ -70,5 +88,11 @@ SeverityCounters (pill = filter button + sibling ⓘ button) and SeverityFinding
 - Query keys come only from `lib/hooks/keys.ts`. The factory arrays are byte-identical to the old literals (`["pulls", repoId]`, `["pr-runs", prId]`, …), so prefix invalidation such as `pullKeys.lists` (`["pulls"]`) still matches. Keep it that way when adding keys.
 - `vi.mock` must use the same specifier style the component imports. After the barrel was removed, tests mock `@/lib/hooks/<domain>`, not `@/lib/hooks`.
 - Code shared by sibling routes goes up to the nearest common route: `formatFindingLocation` lives in `pulls/helpers.ts` and `RunCostBadge` in `pulls/_components/`. It goes to `lib/` only when domain-agnostic, like `formatCost`.
+
+### 2026-11-26 — Skills UI: /skills page, agent Skills tab, trace token strip
+**Date:** 2026-11-26
+**Evidence:** `client/src/app/skills/_components/SkillsListView/SkillsListView.tsx:1`
+
+Import is two calls on purpose: `POST /skills/import/preview` parses and writes nothing, then a normal create saves it disabled. Reordering uses native HTML5 drag plus ArrowUp/Down buttons — the buttons are the keyboard path and the only thing testable under jsdom, where drag events don't fire. Two pre-existing i18n strings were factually wrong and were corrected: skills are not "delimiter-wrapped", and they are not "appended below" the system message (they go in the user message under `## Skills / rules`).
 
 ## Open Questions
