@@ -12,6 +12,12 @@ Non-obvious findings from working on `@devdigest/web`. Appended by the `engineer
 
 FindingsPanel's j/k/a/d keyboard handler is attached to `window`, so it keeps firing while any modal is open — pressing `a`/`d` would silently accept/dismiss the focused finding behind the dialog. Any modal opened from the panel must gate the handler on its open state (early-return).
 
+### A scaffolded i18n namespace's prefix doesn't mean what it looks like
+**Date:** 2026-11-27
+**Evidence:** `client/messages/en/conventions.json` (card.acceptAsSkill)
+
+`conventions.json` had `card.acceptAsSkill: "Accept as Skill"` pre-written under the `"card"` object, but it is the PAGE-HEADER button that turns every accepted candidate into one skill — not a per-card action. The per-card accept button needed its own new key (`card.accept`) because none existed. Don't infer a key's scope from its JSON nesting when auditing a scaffolded i18n file; check the feature spec/screenshot for what each string is actually for.
+
 ## Codebase Patterns
 
 ### PR-list grid: GRID string + COLUMN_KEYS array must update in lockstep
@@ -94,5 +100,11 @@ SeverityCounters (pill = filter button + sibling ⓘ button) and SeverityFinding
 **Evidence:** `client/src/app/skills/_components/SkillsListView/SkillsListView.tsx:1`
 
 Import is two calls on purpose: `POST /skills/import/preview` parses and writes nothing, then a normal create saves it disabled. Reordering uses native HTML5 drag plus ArrowUp/Down buttons — the buttons are the keyboard path and the only thing testable under jsdom, where drag events don't fire. Two pre-existing i18n strings were factually wrong and were corrected: skills are not "delimiter-wrapped", and they are not "appended below" the system message (they go in the user message under `## Skills / rules`).
+
+### 2026-11-27 — Conventions page: ConventionsView/ConventionCard/CreateConventionSkillModal
+**Date:** 2026-11-27
+**Evidence:** `client/src/app/repos/[repoId]/conventions/_components/ConventionCard/ConventionCard.tsx`
+
+Followed the `pulls` list pattern (`useActiveRepo` + `useRepoNotFound` + `<RepoNotFound/>` guard) for the repo-scoped page. `PercentProgress` (`client/src/vendor/ui/primitives/ProgressBar.tsx`) already renders the "label … pct%" + bar-beneath layout the mockup wanted for the confidence meter — no new component needed. `githubBlobUrl(repoFullName, sha, path)` works fine with a repo's `default_branch` in the `sha` slot (it's just a git ref in the URL path, not literally a commit sha), so evidence-file links don't need a PR head sha.
 
 ## Open Questions

@@ -51,3 +51,8 @@ export const traceKeys = {
 export const repoIntelKeys = {
   state: (repoId: Id) => ["repo-intel-state", repoId] as const,
 };
+
+export const conventionKeys = {
+  all: ["conventions"] as const,
+  list: (repoId: Id) => ["conventions", repoId] as const,
+};

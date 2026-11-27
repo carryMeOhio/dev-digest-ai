@@ -133,24 +133,30 @@ export class OpenRouterProvider implements LLMProvider {
         pricing?: { prompt?: string; completion?: string };
       }>;
     };
-    const models: ModelInfo[] = (json.data ?? []).map((m) => {
-      const prompt = Number(m.pricing?.prompt);
-      const completion = Number(m.pricing?.completion);
-      // OpenRouter uses -1 as a sentinel for variable-priced router pseudo-models
-      // (openrouter/auto etc.) — treat negatives as "unknown" so they don't show
-      // as $-1000000 and don't sort to the top of the cheapest list.
-      const pricing =
-        Number.isFinite(prompt) && Number.isFinite(completion) && prompt >= 0 && completion >= 0
-          ? { promptPerM: prompt * 1_000_000, completionPerM: completion * 1_000_000 }
-          : null;
-      return {
-        id: m.id,
-        provider: 'openrouter' as const,
-        label: m.name ?? null,
-        pricing,
-        contextLength: m.context_length ?? null,
-      };
-    });
+    const models: ModelInfo[] = (json.data ?? [])
+      // `:batch` variants are async/offline-only on OpenRouter — the upstream
+      // adapter 404s them against /chat/completions, which is all this
+      // provider drives. Other suffixes (:free, :nitro, :online, ...) stay;
+      // they're routing hints that chat/completions still accepts.
+      .filter((m) => !m.id.endsWith(':batch'))
+      .map((m) => {
+        const prompt = Number(m.pricing?.prompt);
+        const completion = Number(m.pricing?.completion);
+        // OpenRouter uses -1 as a sentinel for variable-priced router pseudo-models
+        // (openrouter/auto etc.) — treat negatives as "unknown" so they don't show
+        // as $-1000000 and don't sort to the top of the cheapest list.
+        const pricing =
+          Number.isFinite(prompt) && Number.isFinite(completion) && prompt >= 0 && completion >= 0
+            ? { promptPerM: prompt * 1_000_000, completionPerM: completion * 1_000_000 }
+            : null;
+        return {
+          id: m.id,
+          provider: 'openrouter' as const,
+          label: m.name ?? null,
+          pricing,
+          contextLength: m.context_length ?? null,
+        };
+      });
     return models.sort(
       (a, b) => (a.pricing?.completionPerM ?? Infinity) - (b.pricing?.completionPerM ?? Infinity),
     );

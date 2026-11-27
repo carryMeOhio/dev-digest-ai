@@ -32,6 +32,7 @@ import type {
   SecretsProvider,
   SecretKey,
 } from '@devdigest/shared';
+import type { RepoIntel, IndexState, IndexResult, BlastResult, RepoMapResult, FileRankRow, SymbolRow, SignatureRow, RefRow } from '../modules/repo-intel/types.js';
 import { parseUnifiedDiff } from './git/diff-parser.js';
 
 /**
@@ -326,5 +327,70 @@ export class MockSecretsProvider implements SecretsProvider {
   constructor(private secrets: Partial<Record<string, string>> = {}) {}
   async get(key: SecretKey): Promise<string | undefined> {
     return this.secrets[key as string];
+  }
+}
+
+// ---------- Mock RepoIntel ----------
+export interface MockRepoIntelOptions {
+  /** Returned by getConventionSamples / getTopFilesByRank — [] means "not indexed". */
+  conventionSamples?: string[];
+  indexState?: Partial<IndexState>;
+}
+
+/**
+ * Minimal RepoIntel stub for features (e.g. conventions) that only need
+ * `getConventionSamples` to be configurable. Every other method returns the
+ * facade's documented "degraded" empty result rather than throwing, so a test
+ * that injects this via `ContainerOverrides.repoIntel` doesn't have to stub
+ * methods it never calls.
+ */
+export class MockRepoIntel implements RepoIntel {
+  constructor(private opts: MockRepoIntelOptions = {}) {}
+
+  async indexRepo(repoId: string): Promise<IndexResult> {
+    return { status: 'full', filesIndexed: 0, filesSkipped: 0, durationMs: 0 };
+  }
+  async refreshIndex(repoId: string): Promise<IndexResult> {
+    return { status: 'full', filesIndexed: 0, filesSkipped: 0, durationMs: 0 };
+  }
+  async getIndexState(repoId: string): Promise<IndexState> {
+    return {
+      repoId,
+      status: 'full',
+      filesIndexed: 0,
+      filesSkipped: 0,
+      durationMs: 0,
+      lastIndexedSha: '',
+      indexerVersion: 1,
+      updatedAt: new Date(),
+      ...this.opts.indexState,
+    };
+  }
+  async getBlastRadius(): Promise<BlastResult> {
+    return { changedSymbols: [], callers: [], impactedEndpoints: [], degraded: true, reason: 'no_data' };
+  }
+  async getRepoMap(): Promise<RepoMapResult> {
+    return { text: '', tokens: 0, cached: false, degraded: true, reason: 'no_data' };
+  }
+  async getFileRank(): Promise<FileRankRow[]> {
+    return [];
+  }
+  async getSymbolsInFiles(): Promise<SymbolRow[]> {
+    return [];
+  }
+  async getCallerSignatures(): Promise<SignatureRow[]> {
+    return [];
+  }
+  async getUnresolvedReferences(): Promise<RefRow[]> {
+    return [];
+  }
+  async getConventionSamples(): Promise<string[]> {
+    return this.opts.conventionSamples ?? [];
+  }
+  async getTopFilesByRank(): Promise<string[]> {
+    return this.opts.conventionSamples ?? [];
+  }
+  async getCriticalPaths(): Promise<string[][]> {
+    return [];
   }
 }
