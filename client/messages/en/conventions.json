@@ -15,12 +15,31 @@
       "body": "Scan the repo to surface house-rules — naming, error handling, structure — each backed by evidence you can turn into a Skill.",
       "cta": "Run extraction"
     },
-    "candidateCount": "{count, plural, one {# candidate} other {# candidates}} · grounded against sampled files"
+    "candidateCount": "{count, plural, one {# candidate} other {# candidates}} · grounded against sampled files",
+    "acceptedCount": "{accepted, number} of {total, number} accepted"
   },
   "card": {
     "confidence": "Confidence",
     "accepted": "Accepted",
     "accepting": "Accepting…",
+    "accept": "Accept",
+    "reject": "Reject",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
     "acceptAsSkill": "Accept as Skill"
+  },
+  "skillModal": {
+    "title": "Create a skill from accepted conventions",
+    "subtitle": "Turn the conventions you've accepted into a reusable Skill. It's saved disabled — turn it on from Skills once you've reviewed it.",
+    "name": "Name",
+    "description": "Description",
+    "descriptionHint": "Shown to agents as the skill's interface — when it applies.",
+    "body": "Body",
+    "bodyHint": "Markdown appended to an agent's prompt when this skill is enabled.",
+    "save": "Save skill",
+    "saving": "Saving…",
+    "discard": "Discard",
+    "createdToast": "Saved \"{name}\" as a disabled skill — turn it on from Skills."
   }
 }

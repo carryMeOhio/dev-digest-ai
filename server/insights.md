@@ -68,6 +68,24 @@ Unchecking a skill in the agent's Skills tab sets `enabled=false` and keeps the 
 
 `TEST_QUALITY_REVIEWER_PROMPT` and `API_CONTRACT_REVIEWER_PROMPT` deliberately omit the checklists they review by — those are seeded skills. Duplicating a rule into the prompt makes the skills-off control experiment measure nothing. Test: if you'd want a second agent to apply the rule, or want to switch it off to see its effect, it is a skill.
 
+### INJECTION_GUARD is usable outside assemblePrompt for non-review LLM calls
+**Date:** 2026-11-27
+**Evidence:** `reviewer-core/src/prompt.ts:16`, `server/src/modules/conventions/prompt.ts`
+
+`INJECTION_GUARD` was a private const, only reachable via `assemblePrompt()`, which requires a `diff` field and renders a `## Diff to review` section — a poor fit for a feature with no diff (e.g. conventions' two-call file-selection/extraction dialogue). It is now exported from `reviewer-core`'s index and re-exported from `server/src/platform/prompt.ts`. For a non-review structured call, build messages by hand: `${system}\n\n${INJECTION_GUARD}`, with `wrapUntrusted()` around each untrusted block.
+
+### MockRepoIntel is the entry point for ContainerOverrides.repoIntel in tests
+**Date:** 2026-11-27
+**Evidence:** `server/src/adapters/mocks.ts` (MockRepoIntel)
+
+No test had injected a `RepoIntel` override before; each facade method must return its documented degraded-empty shape (`{ degraded: true, reason: 'no_data' }` for object-returning methods, `[]` for array-returning ones) or TypeScript won't accept it as `RepoIntel`. `MockRepoIntel` stubs every method that way and exposes `conventionSamples` as the one configurable knob (also backs `getTopFilesByRank`) — extend it with more options rather than hand-rolling a new partial mock per test file.
+
+### Check for an already-wired-but-unexposed field before extending a service's create()
+**Date:** 2026-11-27
+**Evidence:** `server/src/modules/skills/service.ts` (CreateSkillInput)
+
+`SkillsRepository.insert` and the `skills` table already supported `evidenceFiles`, but `SkillsService.CreateSkillInput`/`create()` never passed it through — the conventions feature needed it and only had to add the one missing hop. Before adding a new column or threading a new value through a module you don't own, check whether the repository/table already carries it and only the service type is the gap.
+
 ## Tool & Library Notes
 
 ### Drizzle text(col, { enum }) emits plain text — no CHECK constraint
@@ -103,5 +121,11 @@ Adding a required column to a table that already has rows makes `pnpm db:generat
 **Evidence:** `server/src/modules/reviews/run-executor.ts:215`
 
 The `skills`/`skill_versions`/`agent_skills` tables shipped in `0000_init.sql`, the Zod contracts existed, `GET/POST /agents/:id/skills` was fully implemented, `assemblePrompt` had a `skills` slot, the trace drawer rendered a skills `PromptBlock`, and `messages/en/skills.json` was complete. The only broken wire was run-executor never passing `skills:`. Survey existing scaffolding in this repo before building — several other milestones (conventions, memory, eval) are scaffolded the same way.
+
+### 2026-11-27 — Conventions Extractor: another scaffolded milestone wired end to end
+**Date:** 2026-11-27
+**Evidence:** `server/src/modules/conventions/service.ts`
+
+As predicted by the Skills (M2) entry above: the `conventions` table, the `ConventionCandidate` contract (both vendored copies), the `conventions` feature-model entry, `repoIntel.getConventionSamples`, the i18n file, and the sidebar's active-key match were all already in place — only the module itself (routes/service/repository/prompt/helpers) was missing. Built the two-call LLM dialogue (`ConventionFileSelection` → `ConventionExtraction`, the exact schema names `MockLLMProvider.structuredBySchema` already documented) plus a grounding gate and a dedupe-against-accepted step. Product decisions fixed during planning: Reject always deletes the row (pending or accepted); re-scan deletes pending rows, keeps accepted ones, and drops any newly-grounded candidate whose (normalized rule, evidence_path) matches an already-accepted row, so re-scanning can't reintroduce something the user already accepted under a new id.
 
 ## Open Questions

@@ -50,6 +50,7 @@ Each module is a self-contained Fastify plugin: `routes.ts` → `service.ts` →
 | `polling` | `/repos/:id/poll` | Background PR refresh from GitHub |
 | `settings` | `/settings`, `/providers` | LLM provider config, model selection |
 | `workspace` | `/workspace` | Workspace metadata |
+| `conventions` | `/repos/:id/conventions` | Extract house-rules from a repo; accept/reject/edit; turn accepted rows into a skill |
 
 ## Review execution (`modules/reviews/run-executor.ts`)
 

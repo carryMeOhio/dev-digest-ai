@@ -34,6 +34,8 @@ export interface CreateSkillInput {
   body: string;
   source?: SkillSource;
   enabled?: boolean;
+  /** Files the content was derived from — e.g. the convention extractor's samples. */
+  evidenceFiles?: string[] | null;
 }
 
 export interface UpdateSkillInput {
@@ -97,6 +99,7 @@ export class SkillsService {
       source,
       body: input.body,
       enabled: mayStartEnabled(source) ? (input.enabled ?? true) : false,
+      evidenceFiles: input.evidenceFiles ?? null,
     });
     return toSkillDto(row);
   }

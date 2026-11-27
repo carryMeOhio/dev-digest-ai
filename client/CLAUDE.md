@@ -39,6 +39,7 @@ pnpm build        # production build
 /pulls/[number]            → PR detail: Overview · Files Changed · Agent Runs
 /agents                    → agents list
 /agents/[id]               → agent editor (model + system prompt + repo-intel toggle)
+/repos/[repoId]/conventions → Conventions Lab: extract, review, accept/reject, create a skill
 /settings/[section]        → api-keys · models
 ```
 
